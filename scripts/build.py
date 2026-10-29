@@ -353,9 +353,10 @@ for k in sorted(brand_count, key=lambda k: BR.NAME[k].lower()):
         top = by_rank(lead)[:4] if HAS_RANK else lead[:4]
         parts.append(f'<h2>{"Best sellers" if HAS_RANK else "Popular picks"}</h2>{grid(top)}')
         bands = [(f'Under $5', 0, 5), ('$5 to $15', 5, 15), ('$15 and up', 15, 1e9)]
-        for label, lo, hi in bands:
-            band = [x for x in (by_rank(lead) if HAS_RANK else lead) if lo <= x['price'] < hi][:4]
-            if band: parts.append(f'<h3 class="pband">{label}</h3>{grid(band)}')
+        filled = [(label, [x for x in (by_rank(lead) if HAS_RANK else lead) if lo <= x['price'] < hi][:4]) for label, lo, hi in bands]
+        filled = [(l, b) for l, b in filled if b]
+        if len(filled) > 1:
+            parts.append('<h2>By price</h2>' + ''.join(f'<h3 class="pband">{l}</h3>{grid(b)}' for l, b in filled))
     parts.append(f'<h2>All {E(name)} ({len(lead)})</h2>{grid(by_rank(lead) if HAS_RANK else lead)}')
     if qas: parts.append(f'<h2>{E(name)} questions</h2>{faq_html(qas)}')
     cr = [('Home', '/'), ('Brands', '/brands/'), (name, f'/brands/{k}/')]

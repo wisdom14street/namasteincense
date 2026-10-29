@@ -159,7 +159,7 @@ def brand_intro(S, k, st):
 def brand_faq(S, k, st):
     name = S.BRAND_NAME[k]
     q = [(f'Where can I buy {name} in New York City?', f'Namaste Incense carries {st["n"]} {name} items at 2 West 14th Street, New York, NY 10011, about a 4-minute walk from Union Square. Open daily from 11 AM.'),
-         (f'How much does {name} cost?', f'{name} items here run from {S.money(st["min"])} to {S.money(st["max"])}. Prices on this page update every day.')]
+         (f'How much does {name} cost?', (f'{name} items here run from {S.money(st["min"])} to {S.money(st["max"])}.' if st['max'] > st['min'] else f'{name} items here are {S.money(st["min"])} each.') + ' Prices on this page update every day.')]
     if st['pickup']: q.append((f'Can I reserve {name} online and pick it up?', 'Yes. Tap Buy now, choose Pickup at checkout, and collect your order at 2 West 14th Street.' + (f' Orders are {S.READY.lower()}.' if S.READY else '')))
     if k in BRAND_TEXT and st['n'] >= 5: q.append((f'Who makes {name}?', BRAND_TEXT[k].split('. ')[0] + '.'))
     return q
