@@ -160,7 +160,7 @@ def brand_faq(S, k, st):
     name = S.BRAND_NAME[k]
     q = [(f'Where can I buy {name} in New York City?', f'Namaste Incense carries {st["n"]} {name} items at 2 West 14th Street, New York, NY 10011, about a 4-minute walk from Union Square. Open daily from 11 AM.'),
          (f'How much does {name} cost?', (f'{name} items here run from {S.money(st["min"])} to {S.money(st["max"])}.' if st['max'] > st['min'] else f'{name} items here are {S.money(st["min"])} each.') + ' Prices on this page update every day.')]
-    if st['pickup']: q.append((f'Can I reserve {name} online and pick it up?', 'Yes. Tap Buy now, choose Pickup at checkout, and collect your order at 2 West 14th Street.' + (f' Orders are {S.READY.lower()}.' if S.READY else '')))
+    if st['pickup']: q.append((f'Can I reserve {name} online and pick it up?', 'Yes. Add it to your cart, choose Pickup at checkout, and collect your order at 2 West 14th Street.' + (f' Orders are {S.READY.lower()}.' if S.READY else '')))
     if k in BRAND_TEXT and st['n'] >= 5: q.append((f'Who makes {name}?', BRAND_TEXT[k].split('. ')[0] + '.'))
     return q
 def BRAND_H1(S, k): return f'{S.BRAND_NAME[k]} in New York City'
@@ -224,7 +224,7 @@ FAQ_H1 = 'Questions we hear a lot'
 def FAQ(S):
     return [('Where is Namaste Incense?', f'At {S.STORE_ADDR}, on 14th Street just west of Fifth Avenue, about a 4-minute walk from the 14 St&ndash;Union Square subway station.'),
             ('What are your hours?', 'Monday to Thursday 11 AM to 8 PM, Friday and Saturday 11 AM to 9 PM, and Sunday 11 AM to 7 PM. Holiday hours may differ, so call ahead before a special trip.'),
-            ('Can I order online and pick up in store?', 'Yes. Tap Buy now on any product, choose Pickup at checkout and collect it at 2 West 14th Street.' + (f' Orders are {S.READY.lower()}.' if S.READY else '')),
+            ('Can I order online and pick up in store?', 'Yes. Add any product to your cart, choose Pickup at checkout and collect it at 2 West 14th Street.' + (f' Orders are {S.READY.lower()}.' if S.READY else '')),
             ('Do you ship?', 'Yes. Orders ship from New York City, and shipping options and costs are shown at checkout before you pay. Checkout runs on Shopify through namastebookshop.com.'),
             ('Which incense should I start with?', 'Nag Champa is the classic first stick. If you want less smoke, try Japanese incense; if you love church-like scents, try frankincense resin on charcoal. Our <a href="/scent-finder/">scent finder</a> suggests real in-stock picks.'),
             ('What do I need to burn resin?', 'Charcoal tablets, a heat-proof burner filled with sand or ash, and tongs. Our <a href="/guide/how-to-burn-resin-incense/">resin guide</a> walks through it step by step.'),
