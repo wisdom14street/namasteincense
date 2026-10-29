@@ -107,3 +107,4 @@ body{padding-bottom:52px}@media(min-width:900px){.actionbar{display:none}body{pa
 .scent{display:flex;flex-direction:column;gap:6px;padding:18px;border-radius:var(--r);text-decoration:none;background:var(--card);border:1px solid var(--line);border-top:5px solid var(--c);min-height:150px}
 .scent b{font-family:var(--display);font-size:24px;line-height:1.05}.scent span{font-size:14px;color:var(--muted)}.scent small{margin-top:auto;font-weight:700}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+.trust{list-style:none;padding:0;margin:10px 0 0;display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--muted)}.trust li:before{content:"\2713";color:#1e6b45;font-weight:700;margin-right:5px}

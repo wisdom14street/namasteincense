@@ -7,7 +7,7 @@ If anything fails, the file is simply left out and the site falls back to sortin
 """
 import json, os, re, sys, time, urllib.request
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-COLLECTIONS = ['incense', 'cleansing-smudging', 'candles', 'incense-burner-holder-accs']
+COLLECTIONS = json.load(open(os.path.join(ROOT, 'site', 'config.json'))).get('bestseller_collections') or ['incense', 'cleansing-smudging', 'candles', 'incense-burner-holder-accs']
 UA = {'User-Agent': 'Mozilla/5.0 (compatible; NamasteIncense-build/1.0)'}
 def get(url):
     for attempt in range(4):
@@ -19,13 +19,13 @@ def get(url):
 rank = {}
 for c in COLLECTIONS:
     order, page = [], 1
-    while page < 60:
+    while page < 120:
         html = get(f'https://namastebookshop.com/collections/{c}?sort_by=best-selling&page={page}')
         if html is None or 'Something went wrong' in html[:3000]:
             print(f'{c}: stopped at page {page}', file=sys.stderr); break
         hs = [h for h in dict.fromkeys(re.findall(r'href="/(?:collections/[^/"]+/)?products/([^"?#/]+)', html)) if h not in order]
         if not hs: break
-        order += hs; page += 1; time.sleep(2.5)
+        order += hs; page += 1; time.sleep(3)
     n = max(1, len(order))
     for i, h in enumerate(order):
         rank[h] = min(rank.get(h, 1.0), i / n)

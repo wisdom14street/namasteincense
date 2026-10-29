@@ -12,6 +12,11 @@ sys.path[:0] = [HERE, os.path.join(ROOT, 'site')]
 from catmap import category
 import brands as BR
 import sitecopy as C
+# optional per-site overrides (used by non-incense sites such as the crystal market)
+category = getattr(C, 'category', category)
+BR = getattr(C, 'BR', BR)
+FAM_LABEL, FAM_ALL = getattr(C, 'FAM_LABEL', 'Scent family'), getattr(C, 'FAM_ALL', 'All scents')
+STYLE_LABEL, STYLE_ALL = getattr(C, 'STYLE_LABEL', 'Style'), getattr(C, 'STYLE_ALL', 'All styles')
 
 CFG = json.load(open(os.path.join(ROOT, 'site', 'config.json')))
 DIST = os.path.join(ROOT, 'dist')
@@ -44,6 +49,7 @@ FAMILIES = [
  ('floral', 'Floral', r'rose|jasmine|lavender|lotus|gardenia|lilac|honeysuckle|violet|orchid|ylang|mimosa|magnolia|night queen|blossom|flower|floral|neroli|frangipani'),
  ('sweet', 'Sweet & Spice', r'vanilla|cinnamon|coconut|strawberry|cherry|apple|honey|chocolate|coffee|spice|orange|lemon|mango|fruit|opium|ginger|citron'),
 ]
+FAMILIES = getattr(C, 'FAMILIES', FAMILIES)
 FAM_NAME = {k: n for k, n, _ in FAMILIES}
 def family_of(t):
     for k, _, rx in FAMILIES:
@@ -80,7 +86,7 @@ for p in raw:
     if not avail: continue
     t = p['title'].strip(); b = BR.brand_of(t, p.get('vendor', ''))
     x = {'id': p['id'], 'handle': p['handle'], 'title': t, 'base': base, 'brand': b, 'vendor': p.get('vendor', ''),
-         'family': family_of(t) if base not in ('holders', 'burners') else '', 'style': style_of(t, b) if base in ('sticks', 'cones') else '',
+         'family': family_of(t) if base not in getattr(C, 'NO_FAMILY', ('holders', 'burners')) else '', 'style': C.style_of(t, b, base) if hasattr(C, 'style_of') else (style_of(t, b) if base in ('sticks', 'cones') else ''),
          'price': min(float(v['price']) for v in avail), 'images': [i['src'] for i in p['images'][:6]] or [NOIMG], 'noimg': not p.get('images'),
          'multi': bool(MULTI.search(t)), 'gift': bool(GIFTY.search(t)), 'created': p.get('created_at', ''),
          'rank': RANK.get(p['handle'], 2.0), 'type': p.get('product_type', '')}
@@ -255,6 +261,10 @@ try:
     for size, name in ((180, 'apple-touch-icon.png'), (192, 'icon-192.png'), (512, 'icon-512.png')):
         im = Image.new('RGB', (size, size), CFG['theme']['ink']); d = ImageDraw.Draw(im)
         s = size / 40
+        if getattr(C, 'ICON', '') == 'gem':
+            d.polygon([(a*s, b*s) for a, b in ((12,15),(28,15),(33,21),(20,35),(7,21))], fill=CFG['theme']['accent'])
+            d.line([(a*s, b*s) for a, b in ((7,21),(33,21))], fill=CFG['theme']['ink'], width=max(1, int(s)))
+            im.save(os.path.join(DIST, name)); continue
         d.line([(20*s, 34*s), (20*s, 23*s)], fill=CFG['theme']['accent'], width=max(2, int(2.6*s)))
         for pts in ([(20,22),(15,18),(22,14),(18,9),(22,5),(21,2)], [(24,20),(27,17),(22,15),(25,12)]):
             d.line([(a*s, b*s) for a, b in pts], fill=CFG['theme']['paper'], width=max(2, int(1.8*s)), joint='curve')
@@ -316,15 +326,15 @@ page('/', C.HOME_TITLE(S), C.HOME_DESC(S), home, ldjson({"@context": "https://sc
 def shop_page(path, title, desc, h1, sub, preset=None, intro='', crumbs=None, extra_html='', extra_ld=''):
     preset = preset or {}
     chips = '<button class="f on" data-cat="">All</button>' + ''.join(f'<button class="f" data-cat="{k}" style="--c:{AISLES[k][4]}">{E(AISLES[k][1])} <small>{cat_count[k]}</small></button>' for k in AISLE_KEYS)
-    fams = '<option value="">All scents</option>' + ''.join(f'<option value="{k}">{E(n)}</option>' for k, n, _ in FAMILIES if fam_count[k])
+    fams = f'<option value="">{E(FAM_ALL)}</option>' + ''.join(f'<option value="{k}">{E(n)}</option>' for k, n, _ in FAMILIES if fam_count[k])
     brands = '<option value="">All brands</option>' + ''.join(f'<option value="{k}">{E(BR.NAME[k])}</option>' for k in sorted(brand_count, key=lambda k: BR.NAME[k].lower()))
-    styles = '<option value="">All styles</option>' + ''.join(f'<option>{E(s)}</option>' for s in sorted(style_count))
+    styles = f'<option value="">{E(STYLE_ALL)}</option>' + ''.join(f'<option>{E(s)}</option>' for s in sorted(style_count))
     pool = [x for x in leaders if match(x, preset)]
     pool = (by_rank(pool) if HAS_RANK else pool)[:48]
     body = f'''{crumbs_html(crumbs) if crumbs else ''}<section class="wrap shophead"><h1>{E(h1)}</h1><p>{E(sub)}</p>{intro}</section>
 <section class="wrap shop" data-preset='{E(json.dumps(preset))}'>
 <div class="filters"><div class="fcats" role="group" aria-label="Aisles">{chips}</div><div class="frow"><label class="sr" for="q">Search</label><input type="search" id="q" placeholder="{E(C.SEARCH_PLACEHOLDER)}">
-<label class="sr" for="fam">Scent family</label><select id="fam">{fams}</select><label class="sr" for="brand">Brand</label><select id="brand">{brands}</select><label class="sr" for="sty">Style</label><select id="sty">{styles}</select>
+<label class="sr" for="fam">{E(FAM_LABEL)}</label><select id="fam">{fams}</select><label class="sr" for="brand">Brand</label><select id="brand">{brands}</select><label class="sr" for="sty">{E(STYLE_LABEL)}</label><select id="sty">{styles}</select>
 <label class="sr" for="price">Price</label><select id="price"><option value="">Any price</option><option value="0-5">Under $5</option><option value="0-10">Under $10</option><option value="0-20">Under $20</option><option value="20-99999">$20 and up</option></select>
 <label class="sr" for="sort">Sort</label><select id="sort">{'<option value="best">Best selling</option>' if HAS_RANK else ''}<option value="new">Newest</option><option value="lo">Price: low to high</option><option value="hi">Price: high to low</option><option value="az">A to Z</option></select></div>
 <p class="count" id="count" aria-live="polite"></p></div><div class="grid" id="grid">{''.join(card(x) for x in pool)}</div><div class="more"><button class="btn" id="more" hidden>Show more</button></div></section>{extra_html}'''
@@ -384,9 +394,9 @@ for x in products:
     if len(x['variants']) > 1:
         opts = '<label class="vlab">Option<select id="variant">' + ''.join(f'<option value="{v["id"]}"{" disabled" if not v["available"] else ""}{" selected" if v is v0 else ""}>{E(v["title"])}{"" if v["available"] else " (sold out)"}</option>' for v in x['variants']) + '</select></label>'
     facts = [('Aisle', f'<a href="/shop/{a[2]}/">{E(a[0])}</a>')]
-    if x['family']: facts.append(('Scent family', E(FAM_NAME[x['family']])))
+    if x['family']: facts.append((FAM_LABEL, E(FAM_NAME[x['family']])))
     if x['brand']: facts.append(('Brand', f'<a href="/brands/{x["brand"]}/">{E(BR.NAME[x["brand"]])}</a>'))
-    if x['style']: facts.append(('Style', E(x['style'])))
+    if x['style']: facts.append((STYLE_LABEL, E(x['style'])))
     if v0['sku']: facts.append(('SKU', E(v0['sku'])))
     facts.append(('Ships from', 'New York City'))
     if x['pickup']: facts.append(('Pickup', f'<a href="/visit/">{STORE_STREET}</a>'))
@@ -420,6 +430,7 @@ for x in products:
     body = f'''{crumbs_html(cr)}<section class="wrap pdp" data-handle="{x['handle']}"><div class="gallery"><div class="main"><img id="mainimg" src="{img(imgs[0],1200)}" srcset="{srcset(imgs[0],(600,900,1200))}" sizes="(min-width:900px) 55vw,100vw" alt="{E(x['title'])}" width="1200" height="1200" fetchpriority="high"></div>{f'<div class="thumbs">{gallery}</div>' if len(imgs)>1 else ''}</div>
 <div class="info"><span class="tag" style="--c:{a[4]}">{E(a[0])}</span><h1>{E(x['title'])}</h1><p class="pprice">{cmp_} <span id="price">{money(v0['price'])}</span></p><p class="stock" id="stock"><i></i><span>In stock</span></p>{opts}{sibs}
 <a class="btn buy" id="buy" href="{SHOP}/cart/{v0['id']}:1{CART_ATTR}" rel="nofollow">Buy now</a>
+<ul class="trust"><li>Secure Shopify checkout</li><li>Ships from New York City</li>{"<li>In-store pickup at 2 W 14th St</li>" if x["pickup"] else ""}<li>Open daily from 11 AM</li></ul>
 <p class="note">Checkout opens on Shopify (namastebookshop.com), where you can choose shipping{" or in-store pickup" if x['pickup'] else ""} and review your order before paying.</p>
 {pk}<div class="desc">{''.join(f'<p>{s}</p>' for s in desc)}</div><dl class="facts">{''.join(f'<div><dt>{p}</dt><dd>{q}</dd></div>' for p, q in facts)}</dl><p class="small"><a href="/shipping/">Shipping</a> &middot; <a href="/returns/">Returns</a></p></div></section>{rows}'''
     page(f"/products/{x['handle']}/", f"{x['title']} | {BRAND}", C.PRODUCT_DESC(S, x, v0), body,
