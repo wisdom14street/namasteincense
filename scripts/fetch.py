@@ -5,7 +5,7 @@ OUT = os.path.join(os.path.dirname(__file__), '..', 'data', 'all_products.json')
 allp = []
 for page in range(1, 1000):  # loop until Shopify returns an empty page
     req = urllib.request.Request(f"https://namastebookshop.com/products.json?limit=250&page={page}",
-                                 headers={"User-Agent": "NamasteIncense-build/1.0"})
+                                 headers={"User-Agent": "NamasteIncenseSites-build/1.0"})
     d = json.load(urllib.request.urlopen(req, timeout=60))
     if not d['products']:
         break

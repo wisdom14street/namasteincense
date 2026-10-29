@@ -21,7 +21,7 @@ def check(vid):
     url = f"https://namastebookshop.com/variants/{vid}/?section_id=pickup-availability"
     for attempt in range(3):
         try:
-            t = urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': 'NamasteIncense-build/1.0'}), timeout=30).read().decode('utf-8', 'replace')
+            t = urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': 'NamasteIncenseSites-build/1.0'}), timeout=30).read().decode('utf-8', 'replace')
             t = re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', ' ', t))
             m = re.search(r'Pickup available at (.+?) (Usually ready in [^.<]+?|Ready in [^.<]+?) (?:View|Check|$)', t)
             if m:

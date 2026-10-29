@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   schedule:
-    - cron: "17 9 * * *"   # daily refresh of prices/stock from namastebookshop.com
+    - cron: "17 9 * * *"   # daily refresh of prices, stock and best-seller order from namastebookshop.com
   workflow_dispatch:
 
 permissions:
@@ -24,10 +24,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Fetch catalog, check pickup, build (production, namasteincense.com)
+      - run: pip install segno pillow
+      - name: Fetch catalog, pickup, best sellers; build namasteincense.com
         run: |
+          mkdir -p data
           python3 scripts/fetch.py
           python3 scripts/pickup.py
+          python3 scripts/bestsellers.py || echo "best-seller order unavailable; building without it"
           python3 scripts/build.py --site=https://namasteincense.com
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

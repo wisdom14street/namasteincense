@@ -1,0 +1,11 @@
+{
+  "brand": "Namaste Incense",
+  "short_name": "Namaste Incense",
+  "site_url": "https://namasteincense.com",
+  "storefront": "Namaste Incense",
+  "REVIEW_URL": "",
+  "GOOGLE_SITE_VERIFICATION": "",
+  "siblings": [["Namaste Incense Shop: ritual & smudge apothecary", "https://namasteincenseshop.com/"], ["Namaste Incense Store: value packs & gifts", "https://namasteincensestore.com/"]],
+  "theme": {"ink": "#16302a", "paper": "#f6f0e4", "accent": "#e8a33d",
+            "fonts": "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;700&family=Karla:wght@400;500;700&display=swap"}
+}

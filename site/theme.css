@@ -1,0 +1,5 @@
+:root{--ink:#16302a;--onink:#f6f0e4;--paper:#f6f0e4;--card:#fffdf8;--soft:#fbf1dc;--muted:#5f584c;--line:#e6dccb;--accent:#e8a33d;--onaccent:#16302a;--accentdark:#8a4f0c;--focus:#b5532a;
+--display:"Cormorant Garamond",Georgia,serif;--body:Karla,system-ui,-apple-system,"Segoe UI",sans-serif;--r:6px;--btnr:4px}
+.hero{background:radial-gradient(900px 420px at 80% 0%,#e8a33d40,transparent 60%),radial-gradient(700px 500px at 15% 110%,#f6f0e41f,transparent 65%),linear-gradient(160deg,#10241f,#1d3b33 55%,#2a2a1c);border-bottom:4px solid #b5532a}
+.hero h1{line-height:1.02}.btn{text-transform:uppercase;letter-spacing:.06em;font-size:14px}
+.logo .wordmark b{font-weight:700}.collage img{border-radius:3px}
