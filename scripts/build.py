@@ -60,8 +60,9 @@ def style_of(t, b):
 MULTI = re.compile(r'pack of \d+|\d+\s?-?\s?pack|\(\s?(?:[2-9]|\d{2,})\s?\)|\b\d{2,}\s?(?:sticks|cones|pcs|pieces)\b|\b(?:50|60|100|180|200|250|500)\s?(?:g|gm|gram|grams)\b|\bbox\b|bulk|set of|\bset\b|\b\d+ ?pc|\bx ?\d+ boxes', re.I)
 GIFTY = re.compile(r'kit|gift|set\b|bundle|sampler|collection', re.I)
 
-def img(u, w): return f"{u}{'&' if '?' in u else '?'}width={w}" if u else ''
-def srcset(u, ws): return ', '.join(f'{img(u, w)} {w}w' for w in ws)
+NOIMG = '/assets/no-photo.svg'
+def img(u, w): return (u if u == NOIMG else f"{u}{'&' if '?' in u else '?'}width={w}") if u else ''
+def srcset(u, ws): return u if u == NOIMG else ', '.join(f'{img(u, w)} {w}w' for w in ws)
 def money(v): return f"${float(v):,.2f}"
 
 # ---------- data ----------
@@ -73,14 +74,14 @@ PICKUP = _load('pickup.json', {}); RANK = _load('bestsellers.json', {})
 products = []
 for p in raw:
     base = category(p)
-    if not base or not p.get('images'): continue
+    if not base: continue
     vs = [v for v in p['variants'] if float(v['price']) > 0]
     avail = [v for v in vs if v['available']]
     if not avail: continue
     t = p['title'].strip(); b = BR.brand_of(t, p.get('vendor', ''))
     x = {'id': p['id'], 'handle': p['handle'], 'title': t, 'base': base, 'brand': b, 'vendor': p.get('vendor', ''),
          'family': family_of(t) if base not in ('holders', 'burners') else '', 'style': style_of(t, b) if base in ('sticks', 'cones') else '',
-         'price': min(float(v['price']) for v in avail), 'images': [i['src'] for i in p['images'][:6]],
+         'price': min(float(v['price']) for v in avail), 'images': [i['src'] for i in p['images'][:6]] or [NOIMG], 'noimg': not p.get('images'),
          'multi': bool(MULTI.search(t)), 'gift': bool(GIFTY.search(t)), 'created': p.get('created_at', ''),
          'rank': RANK.get(p['handle'], 2.0), 'type': p.get('product_type', '')}
     cmp_ = [float(v['compare_at_price']) for v in avail if v.get('compare_at_price') and float(v['compare_at_price']) > float(v['price'])]
@@ -111,7 +112,7 @@ def find(a):
 for x in products:
     h = ('h', x['handle'])
     parent[find(h)] = find(('t', x['aisle'], re.sub(r'\s+', ' ', x['title'].lower())))
-    parent[find(h)] = find(('i', x['aisle'], x['images'][0].split('?')[0].rsplit('/', 1)[-1]))
+    if not x['noimg']: parent[find(h)] = find(('i', x['aisle'], x['images'][0].split('?')[0].rsplit('/', 1)[-1]))
 groups = {}
 for x in products: groups.setdefault(find(('h', x['handle'])), []).append(x)
 for g in groups.values():
@@ -120,7 +121,8 @@ for g in groups.values():
 leaders, _seen = [], set()
 for x in products:
     if id(x['group']) not in _seen: _seen.add(id(x['group'])); leaders.append(x['group'][0])
-def by_rank(xs): return sorted(xs, key=lambda x: (x['rank'], x['price']))
+def by_rank(xs): return sorted(xs, key=lambda x: (x['noimg'], x['rank'], x['price']))
+def photo(xs): return [x for x in xs if not x['noimg']]
 
 class S:  # context handed to sitecopy
     pass
@@ -168,7 +170,7 @@ def visit_block(full=False):
 S.visit_block = visit_block; S.visit_buttons = visit_buttons; S.hours_html = hours_html
 def store_ld():
     return {"@context": "https://schema.org", "@type": "Store", "@id": SITE + '/#store', "name": BRAND, "url": SITE + '/',
-            "image": products[0]['images'][0], "logo": SITE + '/icon-512.png', "description": C.STORE_DESC(S), "telephone": TEL, "priceRange": "$",
+            "image": photo(products)[0]['images'][0], "logo": SITE + '/icon-512.png', "description": C.STORE_DESC(S), "telephone": TEL, "priceRange": "$",
             "address": {"@type": "PostalAddress", "streetAddress": STORE_STREET, "addressLocality": STORE_CITY, "addressRegion": STORE_REGION, "postalCode": STORE_ZIP, "addressCountry": "US"},
             "geo": {"@type": "GeoCoordinates", "latitude": GEO[0], "longitude": GEO[1]}, "hasMap": MAP_LINK,
             "openingHoursSpecification": [{"@type": "OpeningHoursSpecification", "dayOfWeek": d, "opens": o, "closes": c} for d, o, c in HOURS_LD],
@@ -211,7 +213,7 @@ def footer():
 </div><div class="wrap legalline">{LEGAL} &copy; {datetime.date.today().year} Wealth Edge Ventures Inc.</div></footer>'''
 
 SITEMAP = []
-OG_DEFAULT = img(by_rank(leaders)[0]['images'][0], 1200)
+OG_DEFAULT = img(by_rank(photo(leaders))[0]['images'][0], 1200)
 def page(path, title, desc, body, extra_head='', canonical=True, index=True, og_image=None):
     url = SITE + path; ogi = og_image or OG_DEFAULT
     robots = '<meta name="robots" content="noindex,nofollow">' if PREVIEW else ''
@@ -274,7 +276,7 @@ json.dump({'aisles': {k: {'name': AISLES[k][0], 'slug': AISLES[k][2], 'color': A
 
 # ---- home ----
 def collage():
-    picks = [x for x in by_rank(leaders) if x['base'] in C.HERO_BASES][:4]
+    picks = [x for x in by_rank(photo(leaders)) if x['base'] in C.HERO_BASES][:4]
     return '<div class="collage" aria-hidden="true">' + ''.join(f'<img src="{img(x["images"][0],500)}" srcset="{srcset(x["images"][0],(300,500))}" sizes="(min-width:900px) 18vw,40vw" alt="" width="500" height="500"{" fetchpriority=\"high\"" if i==0 else " loading=\"lazy\""}>' for i, x in enumerate(picks)) + '</div>'
 def section(sec):
     t = sec['type']
@@ -284,7 +286,7 @@ def section(sec):
     if t == 'collections':
         tiles = ''
         for it in sec['items']:
-            pool = by_rank([x for x in leaders if match(x, it['filter'])])
+            pool = by_rank(photo([x for x in leaders if match(x, it['filter'])]))
             if not pool: continue
             tiles += f'''<a class="coll" href="{it['href']}"><img loading="lazy" src="{img(pool[0]['images'][0],500)}" srcset="{srcset(pool[0]['images'][0],(300,500))}" sizes="(min-width:900px) 30vw,50vw" alt="" width="500" height="500"><div><h3>{E(it['title'])}</h3><p>{E(it['blurb'])}</p><span>{sum(1 for x in products if match(x, it['filter']))} items &rarr;</span></div></a>'''
         return f'<section class="wrap"><div class="sechead"><h2>{E(sec["title"])}</h2></div><div class="colls">{tiles}</div></section>'
@@ -363,7 +365,7 @@ for k in sorted(brand_count, key=lambda k: BR.NAME[k].lower()):
     body = f'{crumbs_html(cr)}<section class="wrap brandpage"><h1>{E(C.BRAND_H1(S, k))}</h1>{"".join(parts)}<p class="legal">{LEGAL}</p></section>'
     page(f'/brands/{k}/', C.BRAND_TITLE(S, k, st), C.BRAND_DESC(S, k, st), body,
          ldjson(crumbs_ld(cr)) + (ldjson(faq_ld(qas)) if qas else '') + ldjson({"@context": "https://schema.org", "@type": "CollectionPage", "name": C.BRAND_H1(S, k), "url": f"{SITE}/brands/{k}/", "about": {"@type": "Brand", "name": name}}),
-         og_image=img(lead[0]['images'][0], 1200))
+         og_image=img(by_rank(lead)[0]['images'][0], 1200) if not by_rank(lead)[0]['noimg'] else None)
     dir_items.append((name, k, st['n']))
 letters = {}
 for name, k, n in dir_items: letters.setdefault(name[0].upper() if name[0].isalpha() else '#', []).append((name, k, n))
@@ -402,7 +404,7 @@ for x in products:
             f'<a class="sib{" on" if y is x else ""}" href="/products/{y["handle"]}/"{" aria-current=\"page\"" if y is x else ""}><img loading="lazy" src="{img(y["images"][0],120)}" alt="" width="60" height="60"><span>{E(y["label"])}</span><b>{money(y["price"])}</b></a>' for y in x['group']) + '</div>'
     desc = C.describe(S, x)
     cr = [('Home', '/'), ('Shop', '/shop/'), (a[0], f'/shop/{a[2]}/'), (x['title'], f"/products/{x['handle']}/")]
-    ld = {"@context": "https://schema.org", "@type": "Product", "name": x['title'], "image": [img(u, 1200) for u in imgs[:3]], "sku": v0['sku'] or str(v0['id']),
+    ld = {"@context": "https://schema.org", "@type": "Product", "name": x['title'], "image": [SITE + u if u == NOIMG else img(u, 1200) for u in imgs[:3]], "sku": v0['sku'] or str(v0['id']),
           "brand": {"@type": "Brand", "name": BR.NAME.get(x['brand'], BRAND)}, "category": a[0], "url": f"{SITE}/products/{x['handle']}/",
           "description": re.sub('<[^>]+>', '', ' '.join(desc)),
           "offers": {"@type": "Offer", "price": f"{float(v0['price']):.2f}", "priceCurrency": "USD", "availability": "https://schema.org/InStock", "itemCondition": "https://schema.org/NewCondition",
@@ -421,7 +423,7 @@ for x in products:
 <p class="note">Checkout opens on Shopify (namastebookshop.com), where you can choose shipping{" or in-store pickup" if x['pickup'] else ""} and review your order before paying.</p>
 {pk}<div class="desc">{''.join(f'<p>{s}</p>' for s in desc)}</div><dl class="facts">{''.join(f'<div><dt>{p}</dt><dd>{q}</dd></div>' for p, q in facts)}</dl><p class="small"><a href="/shipping/">Shipping</a> &middot; <a href="/returns/">Returns</a></p></div></section>{rows}'''
     page(f"/products/{x['handle']}/", f"{x['title']} | {BRAND}", C.PRODUCT_DESC(S, x, v0), body,
-         ldjson(ld) + ldjson(crumbs_ld(cr)) + f'<script>window.NI_PRODUCT={json.dumps({"handle": x["handle"], "cartAttr": CART_ATTR, "shop": SHOP})}</script>', og_image=img(imgs[0], 1200))
+         ldjson(ld) + ldjson(crumbs_ld(cr)) + f'<script>window.NI_PRODUCT={json.dumps({"handle": x["handle"], "cartAttr": CART_ATTR, "shop": SHOP})}</script>', og_image=None if x['noimg'] else img(imgs[0], 1200))
 
 # ---- info pages ----
 def info(path, title, desc, h1, body_html, extra_head='', crumbs=True):

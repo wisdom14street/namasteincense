@@ -1,7 +1,7 @@
 """Brands we can identify in the namastebookshop.com incense catalog.
 
 A product belongs to a brand when its title matches the brand pattern OR its Shopify vendor field is the brand
-itself. Distributor codes in the vendor field (NAGIMPINC, BNJINT, KHPINT, DSGNBDK, OCNLKW, World Buyers,
+itself. Distributor codes in the vendor field (NAGIMPINC, BNJINT, KHPINT, DSGNBDK, OCNLKW, Nirvana Inc, World Buyers,
 Benjamin International, Namaste Bookshop) are wholesalers, not brands, so they never create a brand page.
 
 FACTS hold only details checked on a public source (listed in `src`), Oct 29, 2026. Sites phrase them in their own words.
